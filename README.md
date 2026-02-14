@@ -2,10 +2,6 @@
 
 A Klipper extension for controlling Feetech ST3215 serial bus servo motors. Perfect for grippers, tool changers, camera pan/tilt, and other positioning applications on 3D printers.
 
-![License](https://img.shields.io/badge/license-GPLv3-blue.svg)
-![Version](https://img.shields.io/badge/version-1.0.0-green.svg)
-![Klipper](https://img.shields.io/badge/klipper-compatible-orange.svg)
-
 ## LLM Disclaimer
 
 This extension was completely coded by LLM tools, and then verified by hand. Please verify this for your use case carefully before use.
