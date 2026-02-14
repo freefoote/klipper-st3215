@@ -1,0 +1,317 @@
+# ST3215 Servo Configuration Examples
+#
+# This file contains example configurations for ST3215 serial servos.
+# Copy the relevant sections to your printer.cfg and modify as needed.
+#
+# NOTE: This extension uses safer command names `STSERVO_*` (no digits in the
+# command token) to avoid Klipper gcode parser quirks. If you need to keep the
+# legacy `ST3215_*` names, add the "Legacy alias macros" section (near the end)
+# to map the old names to the new ones.
+
+# ============================================================================
+# Basic Single Servo Configuration
+# ============================================================================
+
+# Simple gripper servo with basic settings
+[st3215 gripper]
+serial: /dev/ttyUSB0          # USB serial port device
+servo_id: 1                    # Servo ID on the bus (0-253)
+position_min: 500              # Minimum allowed position
+position_max: 3500             # Maximum allowed position
+initial_position: 2048         # Position to move to on startup (optional)
+
+# ============================================================================
+# Full Configuration with All Options
+# ============================================================================
+
+[st3215 advanced_servo]
+# Required parameters
+serial: /dev/ttyUSB0           # Serial port device path
+servo_id: 2                    # Unique servo ID (0-253)
+
+# Position limits (0-4095)
+position_min: 0                # Minimum position (default: 0)
+position_max: 4095             # Maximum position (default: 4095)
+
+# Movement parameters
+max_speed: 3400                # Maximum speed (0-3400, default: 3400)
+max_acceleration: 254          # Maximum acceleration (0-254, default: 254)
+
+# Startup behavior
+initial_position: 2048         # Move here on startup (optional)
+
+# Serial communication
+baudrate: 1000000              # Baud rate (default: 1000000)
+
+# Status monitoring
+status_update_interval: 1.0    # Status polling interval in seconds (default: 1.0)
+
+# Safety thresholds
+temperature_warning: 70        # Temperature warning threshold °C (default: 70)
+temperature_critical: 85       # Temperature shutdown threshold °C (default: 85)
+
+# ============================================================================
+# Multiple Servos on Same Bus
+# ============================================================================
+
+# Pan servo
+[st3215 camera_pan]
+serial: /dev/ttyUSB0
+servo_id: 1                    # Different ID than tilt
+position_min: 0
+position_max: 4095
+max_speed: 2000
+initial_position: 2048
+
+# Tilt servo (shares same serial port)
+[st3215 camera_tilt]
+serial: /dev/ttyUSB0           # Same port as pan
+servo_id: 2                    # Different ID
+position_min: 1000
+position_max: 3000
+max_speed: 2000
+initial_position: 2048
+
+# ============================================================================
+# Servos on Different Buses
+# ============================================================================
+
+[st3215 gripper]
+serial: /dev/ttyUSB0
+servo_id: 1
+
+[st3215 tool_changer]
+serial: /dev/ttyUSB1           # Different USB port
+servo_id: 1                    # Can reuse ID on different bus
+
+# ============================================================================
+# Gripper Macros (use STSERVO_* commands)
+# ============================================================================
+
+[gcode_macro GRIPPER_OPEN]
+gcode:
+    STSERVO_MOVE SERVO=gripper POSITION=500 SPEED=2000
+
+[gcode_macro GRIPPER_CLOSE]
+gcode:
+    STSERVO_MOVE SERVO=gripper POSITION=3500 SPEED=2000
+
+[gcode_macro GRIPPER_GRAB]
+description: Open, wait, then close the gripper
+gcode:
+    GRIPPER_OPEN
+    G4 P500  # Wait 500ms
+    GRIPPER_CLOSE
+
+[gcode_macro GRIPPER_RELEASE]
+description: Close slightly, wait, then open the gripper
+gcode:
+    STSERVO_MOVE SERVO=gripper POSITION=2500 SPEED=1000
+    G4 P200
+    GRIPPER_OPEN
+
+[gcode_macro GRIPPER_CALIBRATE]
+description: Move gripper through full range for calibration
+gcode:
+    {% set servo = params.SERVO|default('gripper') %}
+    STSERVO_ENABLE SERVO={servo}
+    G4 P500
+    STSERVO_MOVE SERVO={servo} POSITION=500 SPEED=1000
+    G4 P1000
+    STSERVO_MOVE SERVO={servo} POSITION=3500 SPEED=1000
+    G4 P1000
+    STSERVO_MOVE SERVO={servo} POSITION=2048 SPEED=1000
+
+# ============================================================================
+# Camera Pan/Tilt Macros (use STSERVO_* commands)
+# ============================================================================
+
+[gcode_macro CAMERA_CENTER]
+gcode:
+    STSERVO_MOVE SERVO=camera_pan POSITION=2048 SPEED=2000
+    STSERVO_MOVE SERVO=camera_tilt POSITION=2048 SPEED=2000
+
+[gcode_macro CAMERA_LOOK_AT_BED]
+gcode:
+    STSERVO_MOVE SERVO=camera_pan POSITION=2048
+    STSERVO_MOVE SERVO=camera_tilt POSITION=3000
+
+[gcode_macro CAMERA_LOOK_AT_NOZZLE]
+gcode:
+    STSERVO_MOVE SERVO=camera_pan POSITION=2048
+    STSERVO_MOVE SERVO=camera_tilt POSITION=1500
+
+[gcode_macro CAMERA_SCAN_LEFT]
+gcode:
+    STSERVO_MOVE SERVO=camera_pan POSITION=0 SPEED=1000
+
+[gcode_macro CAMERA_SCAN_RIGHT]
+gcode:
+    STSERVO_MOVE SERVO=camera_pan POSITION=4095 SPEED=1000
+
+# ============================================================================
+# Tool Changer Macros (use STSERVO_* commands)
+# ============================================================================
+
+[gcode_macro TOOL_LOCK]
+gcode:
+    STSERVO_MOVE SERVO=tool_changer POSITION=3500 SPEED=2000
+    G4 P500  # Wait for lock to engage
+
+[gcode_macro TOOL_UNLOCK]
+gcode:
+    STSERVO_MOVE SERVO=tool_changer POSITION=500 SPEED=2000
+    G4 P500  # Wait for unlock
+
+# ============================================================================
+# Advanced Macros with Parameters
+# ============================================================================
+
+[gcode_macro SERVO_MOVE]
+description: Move any servo with optional parameters
+gcode:
+    {% set servo = params.SERVO %}
+    {% set position = params.POSITION|int %}
+    {% set speed = params.SPEED|default(3400)|int %}
+    {% set accel = params.ACCEL|default(254)|int %}
+    STSERVO_MOVE SERVO={servo} POSITION={position} SPEED={speed} ACCEL={accel}
+
+[gcode_macro SERVO_STATUS_ALL]
+description: Query status of all servos
+gcode:
+    STSERVO_STATUS SERVO=gripper
+    STSERVO_STATUS SERVO=camera_pan
+    STSERVO_STATUS SERVO=camera_tilt
+
+# ============================================================================
+# Print Start/End Integration
+# ============================================================================
+
+[gcode_macro PRINT_START]
+gcode:
+    # ... your existing print start code ...
+
+    # Initialize servos to safe positions
+    STSERVO_ENABLE SERVO=gripper
+    GRIPPER_OPEN
+    CAMERA_CENTER
+
+[gcode_macro PRINT_END]
+gcode:
+    # ... your existing print end code ...
+
+    # Park servos in safe positions
+    GRIPPER_OPEN
+    CAMERA_LOOK_AT_BED
+
+    # Optionally disable servos to save power/heat
+    # STSERVO_DISABLE SERVO=gripper
+
+# ============================================================================
+# Emergency Stop Override
+# ============================================================================
+
+[gcode_macro M112]
+rename_existing: M112.1
+gcode:
+    # Stop all servos immediately
+    STSERVO_STOP SERVO=gripper
+    STSERVO_STOP SERVO=camera_pan
+    STSERVO_STOP SERVO=camera_tilt
+
+    # Call original M112
+    M112.1
+
+# ============================================================================
+# Conditional Servo Control (Example)
+# ============================================================================
+
+[gcode_macro CONDITIONAL_GRIPPER]
+description: Example of conditional servo control
+gcode:
+    {% if printer["st3215 gripper"].position < 2000 %}
+        GRIPPER_CLOSE
+    {% else %}
+        GRIPPER_OPEN
+    {% endif %}
+
+# ============================================================================
+# Notes and Tips
+# ============================================================================
+
+# USB Serial Port Detection:
+# - List available ports: ls -l /dev/ttyUSB* /dev/ttyACM*
+# - Check permissions: ls -l /dev/ttyUSB0
+# - Add user to dialout group: sudo usermod -a -G dialout $USER
+# - Persistent device names: Use /dev/serial/by-id/... for consistency
+
+# Position Values:
+# - ST3215 servos use 12-bit positions (0-4095)
+# - 2048 is approximately center (180 degrees)
+# - Full range is ~360 degrees (depending on servo model)
+# - Use SERVO_CALIBRATE macro to find actual min/max for your setup
+
+# Speed Values:
+# - Range: 0-3400
+# - Higher values = faster movement
+# - Lower values = slower, more controlled movement
+# - Adjust based on your mechanical setup and load
+
+# Acceleration Values:
+# - Range: 0-254
+# - Higher values = quicker acceleration/deceleration
+# - Lower values = smoother motion
+# - Reduce if experiencing jerky motion or mechanical issues
+
+# Temperature Monitoring:
+# - Servos can get warm during operation
+# - Default warning at 70°C, shutdown at 85°C
+# - Adjust thresholds based on your environment and duty cycle
+# - Consider active cooling for high-duty applications
+
+# Status Queries:
+# - Use STSERVO_STATUS command to check servo health
+# - Monitor temperature, current, and voltage regularly
+# - Check logs: ~/printer_data/logs/klippy.log
+
+# Troubleshooting:
+# - Servo not detected: Check serial port and servo_id
+# - Permission denied: Add user to dialout group
+# - Klipper won't start: Check logs for configuration errors
+# - Erratic movement: Check power supply voltage/current
+# - Overheating: Reduce duty cycle or add cooling
+
+# ============================================================================
+# Legacy command alias macros (optional)
+# ============================================================================
+# If you relied on ST3215_* command names in existing macros or docs, add
+# the following to your printer.cfg to keep backward compatibility. They
+# are simple mappings to the new STSERVO_* commands.
+
+[gcode_macro ST3215_STATUS]
+gcode:
+    STSERVO_STATUS SERVO={params.SERVO}
+
+[gcode_macro ST3215_MOVE]
+gcode:
+    STSERVO_MOVE SERVO={params.SERVO} POSITION={params.POSITION} {% if params.SPEED %}SPEED={params.SPEED}{% endif %} {% if params.ACCEL %}ACCEL={params.ACCEL}{% endif %}
+
+[gcode_macro ST3215_ENABLE]
+gcode:
+    STSERVO_ENABLE SERVO={params.SERVO}
+
+[gcode_macro ST3215_DISABLE]
+gcode:
+    STSERVO_DISABLE SERVO={params.SERVO}
+
+[gcode_macro ST3215_STOP]
+gcode:
+    STSERVO_STOP SERVO={params.SERVO}
+
+[gcode_macro ST3215_SET_POSITION]
+gcode:
+    STSERVO_SET_POSITION SERVO={params.SERVO} POSITION={params.POSITION}
+
+# ============================================================================
+# End of examples
+# ============================================================================
