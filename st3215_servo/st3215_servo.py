@@ -464,20 +464,56 @@ class ST3215Servo:
 
     def cmd_STSERVO_MOVE(self, gcmd):
         """
-        STSERVO_MOVE SERVO=name POSITION=value [SPEED=value] [ACCEL=value]
+        STSERVO_MOVE SERVO=name POSITION=value [SPEED=value] [ACCEL=value] [WAIT=<seconds>]
+
+        WAIT:
+          - 0 (default) : don't block, return immediately after queuing move
+          - >0           : block (in klipper reactor fashion) until move completes
+                           or until WAIT seconds elapse (timeout)
         """
         position = gcmd.get_int(
             "POSITION", minval=self.position_min, maxval=self.position_max
         )
         speed = gcmd.get_int("SPEED", self.max_speed, minval=0, maxval=3400)
         accel = gcmd.get_int("ACCEL", self.max_accel, minval=0, maxval=254)
+        # WAIT is a timeout in seconds; 0 means don't wait
+        wait = gcmd.get_float("WAIT", 0.0)
 
         try:
+            # Queue the move
             self.move_to(position, speed, accel)
             gcmd.respond_info(
                 f"Moving {self.name} to position {position} "
                 f"(speed={speed}, accel={accel})"
             )
+
+            # If WAIT is requested, poll the servo using the reactor until move completes
+            if wait and wait > 0.0:
+                reactor = self.printer.get_reactor()
+                poll_interval = max(0.01, min(1.0, self.status_update_interval))
+                start_time = reactor.monotonic()
+                end_time = start_time + float(wait)
+                # Initial event time for reactor.pause
+                eventtime = reactor.monotonic()
+
+                while True:
+                    # Check movement state via bus (thread-safe)
+                    try:
+                        moving = self.bus.is_moving(self.servo_id)
+                    except Exception as e:
+                        # If bus check fails, record and break with error
+                        raise gcmd.error(f"Error checking servo moving state: {e}")
+
+                    if not moving:
+                        gcmd.respond_info(f"{self.name} reached position {position}")
+                        break
+                    # Check timeout
+                    now = reactor.monotonic()
+                    if now >= end_time:
+                        raise gcmd.error(f"Timeout waiting for {self.name} move")
+                    # Sleep using reactor.pause to remain reactor-friendly
+                    eventtime = reactor.pause(now + poll_interval)
+
         except Exception as e:
             raise gcmd.error(str(e))
 

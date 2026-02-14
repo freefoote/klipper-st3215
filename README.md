@@ -8,7 +8,7 @@ A Klipper extension for controlling Feetech ST3215 serial bus servo motors. Perf
 
 ## LLM Disclaimer
 
-This extension was completely coded by Claud Sonnet 4.5, and then verified by hand. Please verify this for your use case carefully before use.
+This extension was completely coded by LLM tools, and then verified by hand. Please verify this for your use case carefully before use.
 
 ## Features
 
@@ -142,8 +142,10 @@ Note: Command names containing a letter sequence followed immediately by digits 
 Move servo to absolute position.
 
 ```gcode
-STSERVO_MOVE SERVO=<name> POSITION=<value> [SPEED=<value>] [ACCEL=<value>]
+STSERVO_MOVE SERVO=<name> POSITION=<value> [SPEED=<value>] [ACCEL=<value>] [WAIT=<seconds>]
 ```
+
+With `WAIT`, the command will block (in a Klipper friendly way) until the position has been reached. This is done via polling; use `status_update_interval` to tune how often this polls (default `1.0 seconds`).
 
 **Examples:**
 ```gcode
