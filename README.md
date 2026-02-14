@@ -17,7 +17,7 @@ This extension was completely coded by LLM tools, and then verified by hand. Ple
 - ✅ **Safety Features** - Position limits, temperature monitoring, error recovery
 - ✅ **Status Monitoring** - Real-time position, temperature, current, and voltage
 - ✅ **G-code Integration** - Native Klipper commands and macro support
-- ✅ **Moonraker/Mainsail Compatible** - Status accessible via web interface
+- ✅ **Moonraker Compatible** - Status accessible via web interface
 - ✅ **Easy Installation** - Automated installation script
 - ✅ **Version Control** - Git-based updates
 
@@ -314,7 +314,7 @@ Response:
 1. Check servo is powered on
 2. Verify servo_id is correct (default is usually 1)
 3. Check serial cable connections
-4. Try scanning: Run `ST3215_STATUS` to trigger detection
+4. Try scanning: Run `STSERVO_STATUS` to trigger detection
 
 ### Permission Denied
 
@@ -399,21 +399,25 @@ sudo systemctl restart klipper
 ## Technical Details
 
 ### Position Range
+
 - ST3215 uses 12-bit positioning: 0-4095
 - Position 2048 ≈ center (180°)
 - Full range ≈ 360° (model dependent)
 
 ### Speed Range
+
 - 0-3400 units
 - Higher = faster movement
 - Adjust based on load and application
 
 ### Communication
+
 - Protocol: Feetech SCS serial protocol
 - Default baud rate: 1,000,000 bps
 - Half-duplex serial communication
 
 ### Thread Safety
+
 - Internal locking for multi-servo bus sharing
 - Reactor-safe callbacks for Klipper integration
 - Automatic retry on communication failures
@@ -436,22 +440,6 @@ klipper-st3215/
 └── LICENSE                 # GPL v3 license
 ```
 
-## Contributing
-
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## Support
-
-- **Issues:** [GitHub Issues](https://github.com/YOUR_USERNAME/klipper-st3215/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/YOUR_USERNAME/klipper-st3215/discussions)
-- **Documentation:** See `docs/` directory
-
 ## License
 
 This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
@@ -461,16 +449,6 @@ This project is licensed under the GNU General Public License v3.0 - see the [LI
 - Klipper firmware team for the excellent 3D printer firmware
 - Feetech for ST3215 servo motors
 - st3215 Python library developers
-
-## Changelog
-
-### v1.0.0 (2026)
-- Initial release
-- Multi-servo support
-- Full G-code command set
-- Status monitoring
-- Temperature safety features
-- Automated installation
 
 ---
 
