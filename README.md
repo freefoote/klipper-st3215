@@ -82,10 +82,10 @@ sudo systemctl restart klipper
 ### 4. Test Commands
 
 ```gcode
-ST3215_ENABLE SERVO=gripper
-ST3215_MOVE SERVO=gripper POSITION=3000
-ST3215_STATUS SERVO=gripper
-ST3215_DISABLE SERVO=gripper
+STSERVO_ENABLE SERVO=gripper
+STSERVO_MOVE SERVO=gripper POSITION=3000
+STSERVO_STATUS SERVO=gripper
+STSERVO_DISABLE SERVO=gripper
 ```
 
 ## Configuration Reference
@@ -259,7 +259,7 @@ See [`examples/printer.cfg.example`](examples/printer.cfg.example) for more exam
 ### Via G-code
 
 ```gcode
-ST3215_STATUS SERVO=gripper
+STSERVO_STATUS SERVO=gripper
 ```
 
 Output:
