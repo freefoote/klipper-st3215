@@ -148,6 +148,18 @@ class ST3215Servo:
             desc=self.cmd_STSERVO_STATUS_help,
         )
 
+        # New: list devices on the same bus as this servo.
+        # Usage:
+        #   STSERVO_LIST SERVO=<name>
+        # Returns comma-separated servo IDs found on the configured bus.
+        gcode.register_mux_command(
+            "STSERVO_LIST",
+            "SERVO",
+            servo_name,
+            self.cmd_STSERVO_LIST,
+            desc=self.cmd_STSERVO_LIST_help,
+        )
+
         # Backwards-compatible ST3215_* aliases (map to same handlers)
         # These allow existing configs/examples that use ST3215_* to work.
         gcode.register_mux_command(
@@ -196,6 +208,15 @@ class ST3215Servo:
             servo_name,
             self.cmd_STSERVO_STATUS,
             desc=self.cmd_STSERVO_STATUS_help,
+        )
+
+        # Legacy alias for list (optional)
+        gcode.register_mux_command(
+            "ST3215_LIST",
+            "SERVO",
+            servo_name,
+            self.cmd_STSERVO_LIST,
+            desc=self.cmd_STSERVO_LIST_help,
         )
 
     def _handle_connect(self):
@@ -588,6 +609,51 @@ class ST3215Servo:
             gcmd.respond_info(response)
 
         except Exception as e:
+            raise gcmd.error(str(e))
+
+    # Class-level help for the list command
+    cmd_STSERVO_LIST_help = "List ST3215 servos on the configured bus"
+
+    def cmd_STSERVO_LIST(self, gcmd):
+        """
+        STSERVO_LIST SERVO=<name>
+
+        List all servo IDs present on the bus associated with the configured servo instance.
+        This is registered as a MUX command so you can call it like:
+
+            STSERVO_LIST SERVO=gripper
+
+        It will query the shared bus for attached devices and respond with a concise list.
+        """
+        try:
+            # Use the shared bus for this servo instance
+            bus = self.bus
+            serial_port = getattr(bus, "serial_port", None)
+
+            # Notify user that listing can be slow so they aren't left wondering
+            try:
+                gcmd.respond_info(
+                    f"Listing servos on {serial_port} — this may take up to 10-15s..."
+                )
+            except Exception:
+                # If responding fails for any reason, continue (non-fatal)
+                pass
+
+            # Query bus for servos
+            try:
+                servos = bus.list_servos()
+            except Exception as e:
+                raise gcmd.error(f"Failed to list servos on {serial_port}: {e}")
+
+            if not servos:
+                gcmd.respond_info(f"No servos found on {serial_port}")
+            else:
+                gcmd.respond_info(
+                    f"Servos on {serial_port}: " + ", ".join(str(s) for s in servos)
+                )
+
+        except Exception as e:
+            # Ensure we raise a gcode error object for Klipper to report
             raise gcmd.error(str(e))
 
 

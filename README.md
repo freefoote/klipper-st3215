@@ -189,6 +189,19 @@ Query servo status (position, temperature, current, voltage).
 STSERVO_STATUS SERVO=<name>
 ```
 
+### STSERVO_LIST
+List servos detected on the bus associated with the configured servo instance.
+
+```gcode
+STSERVO_LIST SERVO=<name>
+```
+
+Note: `STSERVO_LIST` performs a bus scan which can be slow (typically 10–15 seconds depending on the adapter and bus). When you run the command the extension will immediately emit an informational message such as:
+
+    Listing servos on /dev/ttyUSB0 — this may take up to 10-15s...
+
+This message informs you the scan is starting; the command will then perform the scan and return either a concise list (e.g. `Servos on /dev/ttyUSB0: 1, 2, 3`) or `No servos found on /dev/ttyUSB0`.
+
 ### Legacy command aliases (optional)
 If you prefer to keep the original `ST3215_*` command names in your macros or scripts, add the following macros to your `printer.cfg`. They map the legacy names to the new `STSERVO_*` commands:
 
@@ -196,6 +209,10 @@ If you prefer to keep the original `ST3215_*` command names in your macros or sc
 [gcode_macro ST3215_STATUS]
 gcode:
     STSERVO_STATUS SERVO={params.SERVO}
+
+[gcode_macro ST3215_LIST]
+gcode:
+    STSERVO_LIST SERVO={params.SERVO}
 
 [gcode_macro ST3215_MOVE]
 gcode:
