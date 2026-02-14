@@ -49,7 +49,7 @@ This extension was completely coded by LLM tools, and then verified by hand. Ple
 
 ```bash
 cd ~
-git clone https://github.com/YOUR_USERNAME/klipper-st3215.git
+git clone https://github.com/freefoote/klipper-st3215.git
 cd klipper-st3215
 ./install.sh
 ```
