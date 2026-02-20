@@ -90,7 +90,7 @@ STSERVO_DISABLE SERVO=gripper
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `serial` | string | Serial port device (e.g., `/dev/ttyUSB0`) |
+| `serial` | string | Serial port device (e.g., `/dev/ttyUSB0` - we recommend the full path though - eg `/dev/serial/by-id/usb-1a86_USB_Single_Serial_5AB0183212-if00` so as to distinguish it from the klipper MCU). |
 | `servo_id` | int (0-253) | Unique servo ID on the bus |
 
 ### Optional Parameters
